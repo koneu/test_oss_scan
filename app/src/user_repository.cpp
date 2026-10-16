@@ -1,69 +1,70 @@
 #include "app/user_repository.hpp"
 
-#include <SQLiteCpp/Statement.h>
+#include <algorithm>
+#include <stdexcept>
+
+#include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
 namespace app {
 
-namespace {
-
-User read_user(SQLite::Statement& query) {
-    return User{query.getColumn(0).getInt64(), query.getColumn(1).getString(), query.getColumn(2).getString()};
+void to_json(nlohmann::json& j, const User& user) {
+    j = nlohmann::json{{"id", user.id}, {"name", user.name}, {"email", user.email}};
 }
 
-}  // namespace
-
-UserRepository::UserRepository(const std::string& db_path)
-    : db_(db_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
-    create_schema();
-    spdlog::debug("Opened database '{}'", db_path);
-}
-
-void UserRepository::create_schema() {
-    db_.exec(
-        "CREATE TABLE IF NOT EXISTS users ("
-        "  id    INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "  name  TEXT NOT NULL,"
-        "  email TEXT NOT NULL UNIQUE"
-        ")");
+void from_json(const nlohmann::json& j, User& user) {
+    j.at("id").get_to(user.id);
+    j.at("name").get_to(user.name);
+    j.at("email").get_to(user.email);
 }
 
 std::int64_t UserRepository::add(const std::string& name, const std::string& email) {
-    SQLite::Statement insert(db_, "INSERT INTO users (name, email) VALUES (?, ?)");
-    insert.bind(1, name);
-    insert.bind(2, email);
-    insert.exec();
-    const auto id = db_.getLastInsertRowid();
+    const bool taken = std::any_of(users_.begin(), users_.end(), [&](const User& u) { return u.email == email; });
+    if (taken) {
+        throw std::invalid_argument("email already in use: " + email);
+    }
+    const auto id = next_id_++;
+    users_.push_back(User{id, name, email});
     spdlog::info("Added user {} ({}) with id {}", name, email, id);
     return id;
 }
 
-std::optional<User> UserRepository::find_by_id(std::int64_t id) {
-    SQLite::Statement query(db_, "SELECT id, name, email FROM users WHERE id = ?");
-    query.bind(1, id);
-    if (query.executeStep()) {
-        return read_user(query);
+std::optional<User> UserRepository::find_by_id(std::int64_t id) const {
+    const auto it = std::find_if(users_.begin(), users_.end(), [id](const User& u) { return u.id == id; });
+    if (it == users_.end()) {
+        return std::nullopt;
     }
-    return std::nullopt;
+    return *it;
 }
 
-std::vector<User> UserRepository::all() {
-    std::vector<User> users;
-    SQLite::Statement query(db_, "SELECT id, name, email FROM users ORDER BY id");
-    while (query.executeStep()) {
-        users.push_back(read_user(query));
-    }
-    return users;
+std::vector<User> UserRepository::all() const {
+    return users_;
 }
 
 bool UserRepository::remove(std::int64_t id) {
-    SQLite::Statement del(db_, "DELETE FROM users WHERE id = ?");
-    del.bind(1, id);
-    return del.exec() > 0;
+    const auto it = std::remove_if(users_.begin(), users_.end(), [id](const User& u) { return u.id == id; });
+    const bool removed = it != users_.end();
+    users_.erase(it, users_.end());
+    return removed;
 }
 
-std::size_t UserRepository::count() {
-    return static_cast<std::size_t>(db_.execAndGet("SELECT COUNT(*) FROM users").getInt64());
+std::size_t UserRepository::count() const {
+    return users_.size();
+}
+
+std::string UserRepository::to_json() const {
+    return nlohmann::json(users_).dump(2);
+}
+
+void UserRepository::load_json(const std::string& json) {
+    auto users = nlohmann::json::parse(json).get<std::vector<User>>();
+    std::int64_t max_id = 0;
+    for (const auto& user : users) {
+        max_id = std::max(max_id, user.id);
+    }
+    users_ = std::move(users);
+    next_id_ = max_id + 1;
+    spdlog::debug("Loaded {} users from JSON", users_.size());
 }
 
 }  // namespace app

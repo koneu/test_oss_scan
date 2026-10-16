@@ -3,7 +3,7 @@
 Small C++17 sample project to try out the [OSS Review Toolkit (ORT)](https://oss-review-toolkit.org).
 
 - **Build:** CMake + Conan 2 (`conanfile.py`, profile in `extras/conan/profiles/default`)
-- **Dependencies:** `spdlog` (logging, pulls in `fmt`), `sqlitecpp` (SQL, pulls in `sqlite3`), `gtest` (test-only)
+- **Dependencies:** `spdlog` (logging, pulls in `fmt`), `nlohmann_json` (JSON serialization, header-only), `gtest` (test-only)
 - **Layout:** `app/include`, `app/src` (library `app_core` + executable `app`), `tests/`
 
 ## Build & test
@@ -20,7 +20,7 @@ Dependency versions are pinned in `conan.lock` (used by the build and by ORT). A
 `conanfile.py`, regenerate it:
 
 ```sh
-conan lock create . --profile:all=extras/conan/profiles/default --lockfile-out=conan.lock
+conan lock create . --profile:all=extras/conan/profiles/default --lockfile="" --lockfile-out=conan.lock
 ```
 
 ## CI

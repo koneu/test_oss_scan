@@ -13,7 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(APP_BUILD_TESTS "Build unit tests" ON)
 
 find_package(spdlog REQUIRED)
-find_package(SQLiteCpp REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 add_subdirectory(app)
 

@@ -7,14 +7,14 @@ int main() {
     auto log = app::init_logger();
 
     try {
-        app::UserRepository repo(":memory:");
+        app::UserRepository repo;
         repo.add("Ada Lovelace", "ada@example.com");
         repo.add("Alan Turing", "alan@example.com");
 
         for (const auto& user : repo.all()) {
             log->info("User #{}: {} <{}>", user.id, user.name, user.email);
         }
-        log->info("{} users in database", repo.count());
+        log->info("{} users in repository:\n{}", repo.count(), repo.to_json());
     } catch (const std::exception& e) {
         log->error("Unhandled error: {}", e.what());
         return 1;

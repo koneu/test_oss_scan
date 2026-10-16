@@ -5,28 +5,27 @@
 #include <string>
 #include <vector>
 
-#include <SQLiteCpp/Database.h>
-
 #include "app/user.hpp"
 
 namespace app {
 
-// Minimal SQLite backed repository for users.
+// Minimal in-memory repository for users with JSON import/export.
 class UserRepository {
 public:
-    // Use ":memory:" for an in-memory database.
-    explicit UserRepository(const std::string& db_path);
-
+    // Throws std::invalid_argument if the email is already taken.
     std::int64_t add(const std::string& name, const std::string& email);
-    std::optional<User> find_by_id(std::int64_t id);
-    std::vector<User> all();
+    std::optional<User> find_by_id(std::int64_t id) const;
+    std::vector<User> all() const;
     bool remove(std::int64_t id);
-    std::size_t count();
+    std::size_t count() const;
+
+    std::string to_json() const;
+    // Replaces the current content. Throws nlohmann::json::exception on malformed input.
+    void load_json(const std::string& json);
 
 private:
-    void create_schema();
-
-    SQLite::Database db_;
+    std::vector<User> users_;
+    std::int64_t next_id_{1};
 };
 
 }  // namespace app
