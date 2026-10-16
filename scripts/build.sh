@@ -15,6 +15,7 @@ fi
 
 conan install . \
     --profile:all=extras/conan/profiles/default \
+    --lockfile=conan.lock \
     --settings:all=build_type="${BUILD_TYPE}" \
     --build=missing
 

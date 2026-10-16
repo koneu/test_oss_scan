@@ -16,6 +16,13 @@ scripts/test.sh Release    # ctest
 build/Release/app/app
 ```
 
+Dependency versions are pinned in `conan.lock` (used by the build and by ORT). After changing
+`conanfile.py`, regenerate it:
+
+```sh
+conan lock create . --profile:all=extras/conan/profiles/default --lockfile-out=conan.lock
+```
+
 ## CI
 
 - `.github/workflows/build.yml` – builds and tests inside the devcontainer (`devcontainers/ci`).

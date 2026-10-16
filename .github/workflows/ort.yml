@@ -29,9 +29,12 @@ jobs:
             evaluator,
             reporter,
             upload-results
-          # Tell ORT's Conan analyzer to use Conan 2 (our conanfile.py is Conan 2 only).
+          # Conan analyzer options: use Conan 2 (our conanfile.py is Conan 2 only), resolve
+          # versions from the committed lockfile and use the same profile as the build.
           ort-cli-args: >-
             -P ort.analyzer.packageManagers.Conan.options.useConan2=true
+            -P ort.analyzer.packageManagers.Conan.options.lockfileName=conan.lock
+            -P ort.analyzer.packageManagers.Conan.options.conanProfilePath=extras/conan/profiles/default
           report-formats: "CycloneDx,SpdxDocument,StaticHtml,WebApp"
           sw-name: test_oss_scan
           sw-version: 0.1.0
