@@ -1,0 +1,40 @@
+name: ORT OSS Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ort:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ORT
+        uses: oss-review-toolkit/ort-ci-github-action@v1
+        with:
+          # Steps to run. Drop "scanner" for a much faster analyzer-only run.
+          run: >
+            cache-dependencies,
+            cache-scan-results,
+            labels,
+            analyzer,
+            scanner,
+            advisor,
+            evaluator,
+            reporter,
+            upload-results
+          # Tell ORT's Conan analyzer to use Conan 2 (our conanfile.py is Conan 2 only).
+          ort-cli-args: >-
+            -P ort.analyzer.packageManagers.Conan.options.useConan2=true
+          report-formats: "CycloneDx,SpdxDocument,StaticHtml,WebApp"
+          sw-name: test_oss_scan
+          sw-version: 0.1.0
+          # Report issues/violations but don't fail the build while experimenting.
+          # Set to "issues,violations" to make the job fail on findings.
+          fail-on: ""

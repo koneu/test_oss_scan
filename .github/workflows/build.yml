@@ -1,0 +1,52 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write # push the devcontainer image as build cache
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: .conan2/p
+          key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py', 'extras/conan/profiles/**', '.devcontainer/**') }}
+          restore-keys: conan-${{ runner.os }}-
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and test in devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/${{ github.repository_owner }}/test_oss_scan-devcontainer
+          cacheFrom: ghcr.io/${{ github.repository_owner }}/test_oss_scan-devcontainer
+          push: ${{ github.event_name == 'push' && 'filter' || 'never' }}
+          refFilterForPush: refs/heads/main
+          runCmd: |
+            set -e
+            scripts/build.sh Release
+            scripts/test.sh Release --output-junit test-results.xml
+            build/Release/app/app
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/Release/test-results.xml
+          if-no-files-found: warn

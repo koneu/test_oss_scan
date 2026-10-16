@@ -1,0 +1,25 @@
+{
+  "name": "test_oss_scan (C++ / Conan)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "CONAN_HOME": "${containerWorkspaceFolder}/.conan2"
+  },
+  "postCreateCommand": "conan profile detect --force",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ],
+      "settings": {
+        "cmake.configureOnOpen": false,
+        "cmake.useCMakePresets": "always"
+      }
+    }
+  }
+}

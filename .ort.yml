@@ -1,0 +1,23 @@
+# ORT repository configuration, see
+# https://oss-review-toolkit.org/ort/docs/configuration/ort-yml
+excludes:
+  paths:
+    - pattern: "build/**"
+      reason: "BUILD_TOOL_OF"
+      comment: "Local build output."
+    - pattern: ".conan2/**"
+      reason: "BUILD_TOOL_OF"
+      comment: "Local Conan cache."
+    - pattern: "tests/**"
+      reason: "TEST_OF"
+      comment: "Unit tests, not distributed."
+    - pattern: "extras/**"
+      reason: "BUILD_TOOL_OF"
+      comment: "Build tooling (Conan profiles)."
+    - pattern: "scripts/**"
+      reason: "BUILD_TOOL_OF"
+      comment: "Build helper scripts."
+  scopes:
+    - pattern: "test"
+      reason: "TEST_DEPENDENCY_OF"
+      comment: "Packages used only for testing (gtest)."
